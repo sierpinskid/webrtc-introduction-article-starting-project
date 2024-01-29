@@ -60,7 +60,7 @@ namespace WebRTCTutorial
         {
             // Send a test message
             Debug.Log("WS Connected. Send test message");
-            _ws.Send("Test Message");
+            //_ws.Send("Test Message");
         }
 
         private void OnError(object sender, ErrorEventArgs e)

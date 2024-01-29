@@ -5,9 +5,10 @@ namespace WebRTCTutorial.DTO
     /// <summary>
     /// DTO (Data Transfer Object) to send/receive SDP Offer or Answer through the network. This DTO maps to <see cref="RTCSessionDescription"/>
     /// </summary>
-    public class SdpDTO : UnityJsonObjectBase<SdpDTO>
+    [System.Serializable]
+    public class SdpDTO
     {
-        public RTCSdpType Type { get; set; }
-        public string Sdp { get; set; }
+        public int Type;
+        public string Sdp;
     }
 }

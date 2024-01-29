@@ -116,8 +116,17 @@ namespace WebRTCTutorial.UI
              */
 
             var (width, height) = GetVideoTextureResolution();
-            _activeCamera = new WebCamTexture(deviceName, width, height, requestedFPS: 30);
+            Debug.Log("Resolution: " + width + "x" + height);
+            _activeCamera = new WebCamTexture(deviceName, 800, 600, requestedFPS: 30);
+
             _activeCamera.Play();
+
+            // starting the camera might fail if the device is not accessible (e.g. used by another application)
+            if (!_activeCamera.isPlaying)
+            {
+                Debug.LogError($"Failed to start the `{deviceName}` camera device.");
+                return;
+            }
             
             // Set preview of the local peer
             _peerViewA.SetVideoTexture(_activeCamera);

@@ -19,8 +19,16 @@ namespace WebRTCTutorial
 
         public void SetActiveCamera(WebCamTexture activeWebCamTexture)
         {
+            // Remove previous track
+            var senders = _peerConnection.GetSenders();
+            foreach (var sender in senders)
+            {
+                _peerConnection.RemoveTrack(sender);
+            }
+            
             var videoTrack = new VideoStreamTrack(activeWebCamTexture);
             _peerConnection.AddTrack(videoTrack);
+
         }
 
         public void Connect()
@@ -133,7 +141,7 @@ namespace WebRTCTutorial
             _pendingLogs.Enqueue("OnWebSocketMessageReceived THREAD  " + Thread.CurrentThread.ManagedThreadId);
             
             var dtoWrapper = JsonUtility.FromJson<DTOWrapper>(message);
-            switch (dtoWrapper.Type)
+            switch ((DtoType)dtoWrapper.Type)
             {
                 case DtoType.ICE:
 
@@ -154,7 +162,7 @@ namespace WebRTCTutorial
                     var sdpDto = JsonUtility.FromJson<SdpDTO>(message);
                     var sdp = new RTCSessionDescription
                     {
-                        type = sdpDto.Type,
+                        type = (RTCSdpType)sdpDto.Type,
                         sdp = sdpDto.Sdp
                     };
                     
@@ -194,7 +202,7 @@ namespace WebRTCTutorial
         {
             var sdpDto = new SdpDTO
             {
-                Type = sdp.type,
+                Type = (int)sdp.type,
                 Sdp = sdp.sdp
             };
 
@@ -202,19 +210,26 @@ namespace WebRTCTutorial
         }
 
         private void SendMessageToOtherPeer<TType>(TType obj, DtoType type) 
-            where TType : IJsonObject<TType>
         {
-            var serializedPayload = JsonUtility.ToJson(obj);
-            
-            var dtoWrapper = new DTOWrapper
+            try
             {
-                Type = type,
-                Payload = serializedPayload
-            };
-
-            var serializedDto = JsonUtility.ToJson(dtoWrapper);
+                var serializedPayload = JsonUtility.ToJson(obj);
             
-            _webSocketClient.SendWebSocketMessage(serializedDto);
+                var dtoWrapper = new DTOWrapper
+                {
+                    Type = (int)type,
+                    Payload = serializedPayload
+                };
+
+                var serializedDto = JsonUtility.ToJson(dtoWrapper);
+            
+                _webSocketClient.SendWebSocketMessage(serializedDto);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+
         }
 
         private IEnumerator CreateAndSendLocalSdpOffer()

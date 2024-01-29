@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Threading;
 using Unity.WebRTC;
 using UnityEngine;
@@ -11,14 +12,39 @@ namespace WebRTCTutorial
     {
         public event Action<Texture> RemoteVideoReceived;
 
+        public bool CanConnect
+            => _peerConnection?.ConnectionState == RTCPeerConnectionState.New ||
+               _peerConnection?.ConnectionState == RTCPeerConnectionState.Disconnected;
+        public bool IsConnected => _peerConnection?.ConnectionState == RTCPeerConnectionState.Connecting;
+
         public void SetActiveCamera(WebCamTexture activeWebCamTexture)
         {
             var videoTrack = new VideoStreamTrack(activeWebCamTexture);
             _peerConnection.AddTrack(videoTrack);
         }
+
+        public void Connect()
+        {
+            StartCoroutine(CreateAndSendLocalSdpOffer());
+        }
+
+        public void Disconnect()
+        {
+            if (!IsConnected)
+            {
+                return;
+            }
+            
+            _peerConnection.Close();
+            _peerConnection.Dispose();
+        }
         
+        // Called by Unity -> https://docs.unity3d.com/ScriptReference/MonoBehaviour.Awake.html
         protected void Awake()
         {
+            // FindObjectOfType is used for the demo purpose only. In a real production it's better to avoid it for performance reasons
+            _webSocketClient = FindObjectOfType<WebSocketClient>();
+            
             StartCoroutine(WebRTC.Update());
 
             var config = new RTCConfiguration
@@ -50,15 +76,29 @@ namespace WebRTCTutorial
             // Triggered when a new message is received from the other peer via WebSocket
             _webSocketClient.MessageReceived += OnWebSocketMessageReceived;
             
-            Debug.Log("MAIN THREAD  " + Thread.CurrentThread.ManagedThreadId);
+            Debug.Log("MAIN THREAD  " + Thread.CurrentThread.ManagedThreadId + " connection state: " + _peerConnection.ConnectionState);
+        }
+
+        protected void Update()
+        {
+            while (_pendingLogs.TryDequeue(out var log))
+            {
+                Debug.Log(log);
+            }
         }
         
+        private WebSocketClient _webSocketClient;
+
+        private RTCPeerConnection _peerConnection;
+        
+        private ConcurrentQueue<string> _pendingLogs = new ConcurrentQueue<string>();
+
         private VideoStreamTrack _videoTrack;
 
         private void OnTrack(RTCTrackEvent trackEvent)
         {
             //Debug.Log("OnTrack");
-            Debug.Log("OnTrack THREAD  " + Thread.CurrentThread.ManagedThreadId);
+            _pendingLogs.Enqueue("OnTrack THREAD  " + Thread.CurrentThread.ManagedThreadId);
 
             if (trackEvent.Track is VideoStreamTrack videoStreamTrack)
             {
@@ -78,23 +118,20 @@ namespace WebRTCTutorial
         private void OnNegotiationNeeded()
         {
             //Debug.Log("OnNegotiationNeeded");
-            Debug.Log("OnNegotiationNeeded THREAD  " + Thread.CurrentThread.ManagedThreadId);
+            _pendingLogs.Enqueue("OnNegotiationNeeded THREAD  " + Thread.CurrentThread.ManagedThreadId);
         }
 
         private void OnIceCandidate(RTCIceCandidate candidate)
         {
             //Debug.Log("OnIceCandidate");
-            Debug.Log("OnIceCandidate THREAD  " + Thread.CurrentThread.ManagedThreadId);
+            _pendingLogs.Enqueue("OnIceCandidate THREAD  " + Thread.CurrentThread.ManagedThreadId);
             SendIceCandidateToOtherPeer(candidate);
         }
 
-        [SerializeField]
-        private WebSocketClient _webSocketClient;
-
-        private RTCPeerConnection _peerConnection;
-
         private void OnWebSocketMessageReceived(string message)
         {
+            _pendingLogs.Enqueue("OnWebSocketMessageReceived THREAD  " + Thread.CurrentThread.ManagedThreadId);
+            
             var dtoWrapper = JsonUtility.FromJson<DTOWrapper>(message);
             switch (dtoWrapper.Type)
             {
@@ -180,6 +217,35 @@ namespace WebRTCTutorial
             _webSocketClient.SendWebSocketMessage(serializedDto);
         }
 
+        private IEnumerator CreateAndSendLocalSdpOffer()
+        {
+            // 1. Create local SDP offer
+            var createOfferOperation = _peerConnection.CreateOffer();
+            yield return createOfferOperation;
+            
+            if (createOfferOperation.IsError)
+            {
+                Debug.LogError("Failed to create offer");
+                yield break;
+            }
+
+            var sdpOffer = createOfferOperation.Desc;
+            
+            // 2. Set the offer as a local SDP 
+            var setLocalSdpOperation = _peerConnection.SetLocalDescription(ref sdpOffer);
+            yield return setLocalSdpOperation;
+            
+            if (setLocalSdpOperation.IsError)
+            {
+                Debug.LogError("Failed to set local description");
+                yield break;
+            }
+            
+            // 3. Send the SDP Offer to the other Peer
+            SendSdpToOtherPeer(sdpOffer);
+            Debug.Log("Sent Sdp Offer");
+        }
+
         private IEnumerator OnRemoteSdpOfferReceived(RTCSessionDescription remoteSdpOffer)
         {
             Debug.Log("Remote SDP Offer received. Set as local offer and send back the generated answer");
@@ -217,7 +283,7 @@ namespace WebRTCTutorial
                 yield break;
             }
             
-            // 4. Send the answer to the other peer
+            // 4. Send the answer to the other Peer
             SendSdpToOtherPeer(sdpAnswer);
             Debug.Log("Sent Sdp Answer");
         }

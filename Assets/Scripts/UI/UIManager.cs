@@ -9,7 +9,7 @@ namespace WebRTCTutorial.UI
     public class UIManager : MonoBehaviour
     {
 #if UNITY_EDITOR
-        // Called by Unity https://docs.unity3d.com/ScriptReference/MonoBehaviour.OnValidate.html
+        // Called by Unity -> https://docs.unity3d.com/ScriptReference/MonoBehaviour.OnValidate.html
         protected void OnValidate()
         {
             try
@@ -30,9 +30,10 @@ namespace WebRTCTutorial.UI
         }
 #endif
 
+        // Called by Unity -> https://docs.unity3d.com/ScriptReference/MonoBehaviour.Awake.html
         protected void Awake()
         {
-            // Usually better to avoid FindObjectOfType in real production project due to performance 
+            // FindObjectOfType is used for the demo purpose only. In a real production it's better to avoid it for performance reasons
             _videoManager = FindObjectOfType<VideoManager>();
 
             // Check if there's any camera device available
@@ -42,6 +43,10 @@ namespace WebRTCTutorial.UI
                     "No Camera devices available! Please make sure a camera device is detected and accessible by Unity. " +
                     "This demo application will not work without a camera device.");
             }
+            
+            // Subscribe to buttons
+            _connectButton.onClick.AddListener(OnConnectButtonClicked);
+            _disconnectButton.onClick.AddListener(OnDisconnectButtonClicked);
 
             // Clear default options from the dropdown
             _cameraDropdown.ClearOptions();
@@ -55,11 +60,25 @@ namespace WebRTCTutorial.UI
             // Change the active camera device when new dropdown value is selected
             _cameraDropdown.onValueChanged.AddListener(SetActiveCamera);
 
-            // Enable first camera from the dropdown
-            SetActiveCamera(deviceIndex: 0);
-            
             // Subscribe to when video from the other peer is received
             _videoManager.RemoteVideoReceived += OnRemoteVideoReceived;
+        }
+
+        // Called by Unity -> https://docs.unity3d.com/ScriptReference/MonoBehaviour.Start.html
+        protected void Start()
+        {
+            // Enable first camera from the dropdown.
+            // We call it in Start to make sure that Awake of all game objects completed and all scripts 
+            SetActiveCamera(deviceIndex: 0);
+        }
+
+        // Called by Unity -> https://docs.unity3d.com/ScriptReference/MonoBehaviour.Update.html
+        protected void Update()
+        {
+            // Control buttons being clickable by the connection state
+            // In a real production code you may want to have this event driven instead of per frame operation
+            _connectButton.interactable = _videoManager.CanConnect;
+            _disconnectButton.interactable = _videoManager.IsConnected;
         }
 
         [SerializeField]
@@ -130,5 +149,9 @@ namespace WebRTCTutorial.UI
         {
             _peerViewB.SetVideoTexture(texture);
         }
+        
+        private void OnConnectButtonClicked() => _videoManager.Connect();
+
+        private void OnDisconnectButtonClicked() => _videoManager.Disconnect();
     }
 }

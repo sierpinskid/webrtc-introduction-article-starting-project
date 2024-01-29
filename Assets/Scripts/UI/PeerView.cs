@@ -7,6 +7,11 @@ namespace WebRTCTutorial.UI
 {
     public class PeerView : MonoBehaviour
     {
+        public void SetVideoTexture(Texture texture)
+        {
+            _videoRender.texture = texture;
+        }
+        
 #if UNITY_EDITOR
         // Called by Unity https://docs.unity3d.com/ScriptReference/MonoBehaviour.OnValidate.html
         protected void OnValidate()

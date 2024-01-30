@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -115,9 +116,9 @@ namespace WebRTCTutorial.UI
                 - Android -> https://docs.unity3d.com/Manual/android-RequestingPermissions.html
              */
 
-            var (width, height) = GetVideoTextureResolution();
+            var (width, height) = GetVideoTextureResolution(deviceName);
             Debug.Log("Resolution: " + width + "x" + height);
-            _activeCamera = new WebCamTexture(deviceName, 1920, 1080, requestedFPS: 30);
+            _activeCamera = new WebCamTexture(deviceName, width, height, requestedFPS: 30);
 
             _activeCamera.Play();
 
@@ -138,20 +139,19 @@ namespace WebRTCTutorial.UI
         /// <summary>
         /// For this demo we'll just take half of the screen resolution
         /// </summary>
-        private static (int width, int height) GetVideoTextureResolution()
+        /// <param name="deviceName"></param>
+        private static (int width, int height) GetVideoTextureResolution(string deviceName)
         {
-            switch (Screen.orientation)
+            var device = WebCamTexture.devices.First(d => d.name == deviceName);
+
+            if (device.availableResolutions == null)
             {
-                // For portrait mode (like Mobile phones) we take Screen's width and height in reversed order because the device is tilted to the side
-                case ScreenOrientation.Portrait:
-                case ScreenOrientation.PortraitUpsideDown:
-                    return (Screen.height / 2, Screen.width / 2);
-                case ScreenOrientation.LandscapeLeft:
-                case ScreenOrientation.LandscapeRight:
-                case ScreenOrientation.AutoRotation:
-                default:
-                    return (Screen.width / 2, Screen.width / 2);
+                return (1920, 1080);
             }
+            
+            var highestResolution = device.availableResolutions.OrderBy(r => r.width).First();
+
+            return (highestResolution.width, highestResolution.height);
         }
         
         private void OnRemoteVideoReceived(Texture texture)

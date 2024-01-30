@@ -121,6 +121,7 @@ namespace WebRTCTutorial
 
         private void OnVideoReceived(Texture texture)
         {
+            _pendingLogs.Enqueue("OnVideoReceived THREAD  " + Thread.CurrentThread.ManagedThreadId);
             RemoteVideoReceived?.Invoke(texture);
         }
 

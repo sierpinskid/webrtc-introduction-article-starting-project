@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Linq;
 using TMPro;
 using UnityEngine;
@@ -116,9 +117,8 @@ namespace WebRTCTutorial.UI
                 - Android -> https://docs.unity3d.com/Manual/android-RequestingPermissions.html
              */
 
-            var (width, height) = GetVideoTextureResolution(deviceName);
-            Debug.Log("Resolution: " + width + "x" + height);
-            _activeCamera = new WebCamTexture(deviceName, width, height, requestedFPS: 30);
+            // Some platforms (like Android) require 16x16 alignment for the texture size to be sent via WebRTC
+            _activeCamera = new WebCamTexture(deviceName, 1024, 768, requestedFPS: 30);
 
             _activeCamera.Play();
 
@@ -132,21 +132,41 @@ namespace WebRTCTutorial.UI
             // Set preview of the local peer
             _peerViewA.SetVideoTexture(_activeCamera);
 
-            // Notify Video Manager about new active camera device
-            _videoManager.SetActiveCamera(_activeCamera);
+            StartCoroutine(PassActiveCameraToVideoManager());
         }
 
         /// <summary>
-        /// For this demo we'll just take half of the screen resolution
+        /// Starting the camera is an asynchronous operation.
+        /// If we create the video track before camera is active it may have an invalid resolution.
+        /// Therefore, it's best to wait until camera is in fact started before passing it to the video track
         /// </summary>
-        /// <param name="deviceName"></param>
+        private IEnumerator PassActiveCameraToVideoManager()
+        {
+            var timeElapsed = 0f;
+            while (!_activeCamera.didUpdateThisFrame)
+            {
+                yield return null;
+                
+                // infinite loop prevention
+                timeElapsed += Time.deltaTime;
+                if (timeElapsed > 5f)
+                {
+                    Debug.LogError("Camera didn't start after 5 seconds. Aborting. The video track is not created.");
+                    yield break;
+                }
+            }
+            
+            // Notify Video Manager about new active camera device
+            _videoManager.SetActiveCamera(_activeCamera);
+        }
+        
         private static (int width, int height) GetVideoTextureResolution(string deviceName)
         {
             var device = WebCamTexture.devices.First(d => d.name == deviceName);
 
             if (device.availableResolutions == null)
             {
-                return (1920, 1080);
+                return (1024, 768);
             }
             
             var highestResolution = device.availableResolutions.OrderBy(r => r.width).First();

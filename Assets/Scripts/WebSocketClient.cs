@@ -16,7 +16,8 @@ namespace WebRTCTutorial
         protected void Awake()
         {
             // Create WebSocket instance and connect to localhost
-            _ws = new WebSocket("ws://localhost:8080");
+            var url = string.IsNullOrEmpty(_url) ? "ws://localhost:8080" : _url;
+            _ws = new WebSocket(url);
         
             // Subscribe to events
             _ws.OnMessage += OnMessage;
@@ -43,12 +44,16 @@ namespace WebRTCTutorial
             _ws.OnError -= OnError;
             _ws = null;
         }
+
+        [SerializeField]
+        private string _url;
     
         private WebSocket _ws;
 
         private void OnMessage(object sender, MessageEventArgs e)
         {
             Debug.Log("WS Message Received: " + e.Data);
+            MessageReceived?.Invoke(e.Data);
         }
 
         private void OnClose(object sender, CloseEventArgs e)

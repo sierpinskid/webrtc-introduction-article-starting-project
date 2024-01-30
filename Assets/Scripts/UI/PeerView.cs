@@ -10,6 +10,14 @@ namespace WebRTCTutorial.UI
         public void SetVideoTexture(Texture texture)
         {
             _videoRender.texture = texture;
+            
+            // Adjust the texture size to match the aspect ratio of the video
+            var sourceAspectRatio = texture.width * 1f / texture.height;
+
+            var currentSize = _videoRender.rectTransform.sizeDelta;
+            var adjustedSize = new Vector2(currentSize.x, currentSize.x / sourceAspectRatio);
+
+            _videoRender.rectTransform.sizeDelta = adjustedSize;
         }
         
 #if UNITY_EDITOR

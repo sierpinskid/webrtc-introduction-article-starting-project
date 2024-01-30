@@ -117,7 +117,7 @@ namespace WebRTCTutorial.UI
 
             var (width, height) = GetVideoTextureResolution();
             Debug.Log("Resolution: " + width + "x" + height);
-            _activeCamera = new WebCamTexture(deviceName, 800, 600, requestedFPS: 30);
+            _activeCamera = new WebCamTexture(deviceName, 1920, 1080, requestedFPS: 30);
 
             _activeCamera.Play();
 

@@ -27,6 +27,7 @@ namespace WebRTCTutorial
             _ws.Connect();
         }
 
+        // Called by Unity -> https://docs.unity3d.com/ScriptReference/MonoBehaviour.Update.html
         protected void Update()
         {
             // Process received messages on the main thread - Unity functions can only be called from the main thread
@@ -37,7 +38,7 @@ namespace WebRTCTutorial
             }
         }
 
-        // OnDestroy is called automatically by Unity when the script is destroyed
+        // Called by Unity -> https://docs.unity3d.com/ScriptReference/MonoBehaviour.OnDestroy.html
         protected void OnDestroy()
         {
             if (_ws == null)

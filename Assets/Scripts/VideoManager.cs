@@ -82,45 +82,18 @@ namespace WebRTCTutorial
 
             // Triggered when a new message is received from the other peer via WebSocket
             _webSocketClient.MessageReceived += OnWebSocketMessageReceived;
-
-            Debug.Log("MAIN THREAD  " + Thread.CurrentThread.ManagedThreadId + " connection state: " +
-                      _peerConnection.ConnectionState);
         }
-
-        protected void Update()
-        {
-            if (_videoTrack == null || _videoTrack.Texture == null)
-            {
-                return;
-            }
-
-            var res = (_videoTrack.Texture.width, _videoTrack.Texture.height);
-            if (res == _lastRes)
-            {
-                return;
-            }
-            
-            Debug.Log($"RECEIVED TEXTURE RESOLUTION: {res.width}x{res.height}");
-            _lastRes = res;
-        }
-
-        private (int, int) _lastRes;
 
         private WebSocketClient _webSocketClient;
-
         private RTCPeerConnection _peerConnection;
-
-        private VideoStreamTrack _videoTrack;
 
         private void OnTrack(RTCTrackEvent trackEvent)
         {
-            //Debug.Log("OnTrack");
-            Debug.Log("OnTrack THREAD  " + Thread.CurrentThread.ManagedThreadId);
+            Debug.Log("OnTrack received, type: " + trackEvent.Track.Kind);
 
             if (trackEvent.Track is VideoStreamTrack videoStreamTrack)
             {
-                _videoTrack = videoStreamTrack;
-                _videoTrack.OnVideoReceived += OnVideoReceived;
+                videoStreamTrack.OnVideoReceived += OnVideoReceived;
             }
             else
             {
@@ -131,27 +104,23 @@ namespace WebRTCTutorial
 
         private void OnVideoReceived(Texture texture)
         {
-            Debug.Log($"OnVideoReceived THREAD {texture.width}x{texture.height}  " + Thread.CurrentThread.ManagedThreadId);
+            Debug.Log($"Video received, resolution: {texture.width}x{texture.height}");
             RemoteVideoReceived?.Invoke(texture);
         }
 
         private void OnNegotiationNeeded()
         {
-            //Debug.Log("OnNegotiationNeeded");
-            Debug.Log("OnNegotiationNeeded THREAD  " + Thread.CurrentThread.ManagedThreadId);
+            Debug.Log("OnNegotiationNeeded");
         }
 
         private void OnIceCandidate(RTCIceCandidate candidate)
         {
-            //Debug.Log("OnIceCandidate");
-            Debug.Log("OnIceCandidate THREAD  " + Thread.CurrentThread.ManagedThreadId);
             SendIceCandidateToOtherPeer(candidate);
+            Debug.Log("Sent Ice Candidate to the other peer THREAD  " + Thread.CurrentThread.ManagedThreadId);
         }
 
         private void OnWebSocketMessageReceived(string message)
         {
-            Debug.Log("OnWebSocketMessageReceived THREAD  " + Thread.CurrentThread.ManagedThreadId);
-
             var dtoWrapper = JsonUtility.FromJson<DTOWrapper>(message);
             switch ((DtoType)dtoWrapper.Type)
             {

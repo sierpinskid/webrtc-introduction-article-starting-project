@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -45,7 +44,7 @@ namespace WebRTCTutorial.UI
                     "No Camera devices available! Please make sure a camera device is detected and accessible by Unity. " +
                     "This demo application will not work without a camera device.");
             }
-            
+
             // Subscribe to buttons
             _connectButton.onClick.AddListener(OnConnectButtonClicked);
             _disconnectButton.onClick.AddListener(OnDisconnectButtonClicked);
@@ -128,7 +127,7 @@ namespace WebRTCTutorial.UI
                 Debug.LogError($"Failed to start the `{deviceName}` camera device.");
                 return;
             }
-            
+
             // Set preview of the local peer
             _peerViewA.SetVideoTexture(_activeCamera);
 
@@ -146,7 +145,7 @@ namespace WebRTCTutorial.UI
             while (!_activeCamera.didUpdateThisFrame)
             {
                 yield return null;
-                
+
                 // infinite loop prevention
                 timeElapsed += Time.deltaTime;
                 if (timeElapsed > 5f)
@@ -155,30 +154,16 @@ namespace WebRTCTutorial.UI
                     yield break;
                 }
             }
-            
+
             // Notify Video Manager about new active camera device
             _videoManager.SetActiveCamera(_activeCamera);
         }
-        
-        private static (int width, int height) GetVideoTextureResolution(string deviceName)
-        {
-            var device = WebCamTexture.devices.First(d => d.name == deviceName);
 
-            if (device.availableResolutions == null)
-            {
-                return (1024, 768);
-            }
-            
-            var highestResolution = device.availableResolutions.OrderBy(r => r.width).First();
-
-            return (highestResolution.width, highestResolution.height);
-        }
-        
         private void OnRemoteVideoReceived(Texture texture)
         {
             _peerViewB.SetVideoTexture(texture);
         }
-        
+
         private void OnConnectButtonClicked() => _videoManager.Connect();
 
         private void OnDisconnectButtonClicked() => _videoManager.Disconnect();

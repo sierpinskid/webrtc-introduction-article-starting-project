@@ -145,7 +145,7 @@ namespace WebRTCTutorial
             {
                 case DtoType.ICE:
 
-                    var iceDto = JsonUtility.FromJson<ICECanddidateDTO>(message);
+                    var iceDto = JsonUtility.FromJson<ICECanddidateDTO>(dtoWrapper.Payload);
                     var ice = new RTCIceCandidate(new RTCIceCandidateInit
                     {
                         candidate = iceDto.Candidate,
@@ -159,7 +159,7 @@ namespace WebRTCTutorial
                     break;
                 case DtoType.SDP:
 
-                    var sdpDto = JsonUtility.FromJson<SdpDTO>(message);
+                    var sdpDto = JsonUtility.FromJson<SdpDTO>(dtoWrapper.Payload);
                     var sdp = new RTCSessionDescription
                     {
                         type = (RTCSdpType)sdpDto.Type,

@@ -110,6 +110,7 @@ namespace WebRTCTutorial
 
             if (trackEvent.Track is VideoStreamTrack videoStreamTrack)
             {
+                _videoTrack = videoStreamTrack;
                 _videoTrack.OnVideoReceived += OnVideoReceived;
             }
             else
@@ -229,7 +230,6 @@ namespace WebRTCTutorial
             {
                 Debug.LogException(e);
             }
-
         }
 
         private IEnumerator CreateAndSendLocalSdpOffer()
@@ -312,7 +312,6 @@ namespace WebRTCTutorial
             if (setRemoteSdpOperation.IsError)
             {
                 Debug.LogError("Failed to set remote description");
-                yield break;
             }
         }
     }

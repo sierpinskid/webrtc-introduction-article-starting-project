@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using UnityEngine;
 using WebSocketSharp;
 
@@ -29,6 +30,16 @@ namespace WebRTCTutorial
             _ws.Connect();
         }
 
+        protected void Update()
+        {
+            // Process received messages on the main thread - Unity functions can only be called from the main thread
+            while (_receivedMessages.TryDequeue(out var message))
+            {
+                Debug.Log("WS Message Received: " + message);
+                MessageReceived?.Invoke(message);
+            }
+        }
+
         // OnDestroy is called automatically by Unity when the script is destroyed
         protected void OnDestroy()
         {
@@ -50,10 +61,11 @@ namespace WebRTCTutorial
     
         private WebSocket _ws;
 
+        private readonly ConcurrentQueue<string> _receivedMessages = new ConcurrentQueue<string>();
+
         private void OnMessage(object sender, MessageEventArgs e)
         {
-            Debug.Log("WS Message Received: " + e.Data);
-            MessageReceived?.Invoke(e.Data);
+            _receivedMessages.Enqueue(e.Data);
         }
 
         private void OnClose(object sender, CloseEventArgs e)

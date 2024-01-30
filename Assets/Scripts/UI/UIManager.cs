@@ -128,9 +128,6 @@ namespace WebRTCTutorial.UI
                 return;
             }
 
-            // Set preview of the local peer
-            _peerViewA.SetVideoTexture(_activeCamera);
-
             StartCoroutine(PassActiveCameraToVideoManager());
         }
 
@@ -154,6 +151,9 @@ namespace WebRTCTutorial.UI
                     yield break;
                 }
             }
+            
+            // Set preview of the local peer
+            _peerViewA.SetVideoTexture(_activeCamera);
 
             // Notify Video Manager about new active camera device
             _videoManager.SetActiveCamera(_activeCamera);

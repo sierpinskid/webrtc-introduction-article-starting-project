@@ -28,6 +28,8 @@ namespace WebRTCTutorial
 
             var videoTrack = new VideoStreamTrack(activeWebCamTexture);
             _peerConnection.AddTrack(videoTrack);
+            
+            Debug.Log("Sender video track was set");
         }
 
         public void Connect()
@@ -71,7 +73,9 @@ namespace WebRTCTutorial
 
             _peerConnection = new RTCPeerConnection(ref config);
 
-            // "Negotiation" is the exchange of SDP Offer/Answer. Peers describe what media they want to send and agree on, for example, what codecs to use 
+            // "Negotiation" is the exchange of SDP Offer/Answer. Peers describe what media they want to send and agree on, for example, what codecs to use
+            // In this tutorial we exchange the SDP Offer/Answer only once when connecting.
+            // But in a real production you'd have to repeat the exchange every time the OnNegotiationNeeded event is triggered
             _peerConnection.OnNegotiationNeeded += OnNegotiationNeeded;
 
             // Triggered when a new network endpoint is found that could potentially be used to establish the connection
@@ -110,7 +114,7 @@ namespace WebRTCTutorial
 
         private void OnNegotiationNeeded()
         {
-            Debug.Log("OnNegotiationNeeded");
+            Debug.Log("SDP Offer <-> Answer exchange requested by the webRTC client.");
         }
 
         private void OnIceCandidate(RTCIceCandidate candidate)

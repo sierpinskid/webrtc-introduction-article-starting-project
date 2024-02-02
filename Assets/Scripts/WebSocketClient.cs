@@ -15,7 +15,7 @@ namespace WebRTCTutorial
         // Awake is called automatically by Unity when a script attached to a gameObject is loaded
         protected void Awake()
         {
-            // Create WebSocket instance and connect to localhost
+            // Create WebSocket instance and connect
             var url = string.IsNullOrEmpty(_url) ? "ws://localhost:8080" : _url;
             _ws = new WebSocket(url);
 
@@ -30,6 +30,12 @@ namespace WebRTCTutorial
         // Called by Unity -> https://docs.unity3d.com/ScriptReference/MonoBehaviour.Update.html
         protected void Update()
         {
+            // Process received errors on the main thread - Unity functions can only be called from the main thread
+            while (_receivedMessages.TryDequeue(out var message))
+            {
+                Debug.LogError("WS error: " + message);
+            }
+            
             // Process received messages on the main thread - Unity functions can only be called from the main thread
             while (_receivedMessages.TryDequeue(out var message))
             {
@@ -49,6 +55,8 @@ namespace WebRTCTutorial
             // Unsubscribe from events
             _ws.OnMessage -= OnMessage;
             _ws.OnError -= OnError;
+            
+            _ws.Close();
             _ws = null;
         }
 
@@ -58,15 +66,10 @@ namespace WebRTCTutorial
         private WebSocket _ws;
 
         private readonly ConcurrentQueue<string> _receivedMessages = new ConcurrentQueue<string>();
+        private readonly ConcurrentQueue<string> _receivedErrors = new ConcurrentQueue<string>();
 
-        private void OnMessage(object sender, MessageEventArgs e)
-        {
-            _receivedMessages.Enqueue(e.Data);
-        }
+        private void OnMessage(object sender, MessageEventArgs e) => _receivedMessages.Enqueue(e.Data);
 
-        private void OnError(object sender, ErrorEventArgs e)
-        {
-            Debug.LogError("WS error: " + e.Message);
-        }
+        private void OnError(object sender, ErrorEventArgs e) => _receivedErrors.Enqueue(e.Message);
     }
 }

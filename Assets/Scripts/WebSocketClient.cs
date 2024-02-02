@@ -12,7 +12,7 @@ namespace WebRTCTutorial
 
         public void SendWebSocketMessage(string message) => _ws.Send(message);
 
-        // Awake is called automatically by Unity when a script attached to a gameObject is loaded
+        // Called by Unity -> https://docs.unity3d.com/ScriptReference/MonoBehaviour.Awake.html
         protected void Awake()
         {
             // Create WebSocket instance and connect

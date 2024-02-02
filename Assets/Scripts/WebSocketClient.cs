@@ -16,7 +16,8 @@ namespace WebRTCTutorial
         protected void Awake()
         {
             // Create WebSocket instance and connect
-            var url = string.IsNullOrEmpty(_url) ? "ws://localhost:8080" : _url;
+            var ip = string.IsNullOrEmpty(_serverIp) ? "localhost" : _serverIp;
+            var url = $"ws://{ip}:8080";
             _ws = new WebSocket(url);
 
             // Subscribe to events
@@ -61,7 +62,7 @@ namespace WebRTCTutorial
         }
 
         [SerializeField]
-        private string _url;
+        private string _serverIp;
 
         private WebSocket _ws;
 
